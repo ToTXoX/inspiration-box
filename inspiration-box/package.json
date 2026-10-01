@@ -4,7 +4,11 @@
   "version": "0.1.0",
   "type": "module",
   "scripts": {
-    "dev": "concurrently -k -n web,api -c cyan,magenta \"vite\" \"node server/index.cjs\"",
+    "dev": "vite",
+    "dev:legacy": "concurrently -k -n web,api -c cyan,magenta \"vite\" \"node server/index.cjs\"",
+    "mac:build": "bash ../scripts/build-macos.sh",
+    "mac:open": "open ../build/灵感匣.app",
+    "test:desktop": "node ../scripts/check-desktop.cjs",
     "dev:web": "vite",
     "dev:api": "node server/index.cjs",
     "build": "tsc --noEmit && vite build",

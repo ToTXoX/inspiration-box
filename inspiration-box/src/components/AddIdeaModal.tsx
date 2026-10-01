@@ -5,6 +5,7 @@ import { useStore } from "../store/useStore";
 import { PLATFORMS, CategoryId, Platform, Idea } from "../types";
 import { Plus, Pencil } from "../icons";
 import { SmartImage, CoverPlaceholder } from "./SmartImage";
+import { cancelPreview, extractSharedURL, previewLink, saveUploadedImage } from "../lib/desktop";
 
 const PLATFORM_MAP: Record<string, Platform> = {
   "xiaohongshu.com": "小红书",
@@ -24,7 +25,7 @@ const PLATFORM_MAP: Record<string, Platform> = {
 function detectPlatform(link: string): Platform | null {
   try {
     const h = new URL(link).hostname.toLowerCase();
-    for (const k of Object.keys(PLATFORM_MAP)) if (h.includes(k)) return PLATFORM_MAP[k];
+    for (const k of Object.keys(PLATFORM_MAP)) if (h === k || h.endsWith(`.${k}`)) return PLATFORM_MAP[k];
     return null;
   } catch {
     return null;
@@ -57,8 +58,32 @@ export default function AddIdeaModal({
     "idle" | "loading" | "ok" | "noimg" | "error"
   >("idle");
   const previewTimer = useRef<number>();
+  const previewAbort = useRef<AbortController | null>(null);
+  const previewID = useRef<string | null>(null);
+  const generation = useRef(0);
+  const uploadGeneration = useRef(0);
+  const autoTitle = useRef<string | null>(null);
+  const autoImage = useRef<string | null>(null);
+  const [linkError, setLinkError] = useState("");
+
+  const stopPreview = () => {
+    generation.current += 1;
+    window.clearTimeout(previewTimer.current);
+    previewAbort.current?.abort();
+    previewAbort.current = null;
+    cancelPreview(previewID.current);
+    previewID.current = null;
+  };
+
+  useEffect(() => () => { stopPreview(); uploadGeneration.current += 1; }, []);
 
   useEffect(() => {
+    stopPreview();
+    uploadGeneration.current += 1;
+    setUploading(false);
+    autoTitle.current = null;
+    autoImage.current = null;
+    setLinkError("");
     if (open) {
       if (edit) {
         // 编辑模式：用现有卡片预填
@@ -81,9 +106,10 @@ export default function AddIdeaModal({
       setLinkState("idle");
       form.resetFields();
     }
-  }, [open, defaultCategory, form, edit]);
+  }, [open, defaultCategory, form, edit?.id]);
 
   const handleOk = async () => {
+    if (uploading || linkState === "loading") return;
     try {
       const v = await form.validateFields();
       setLoading(true);
@@ -119,61 +145,95 @@ export default function AddIdeaModal({
     }
   };
 
-  // 链接解析（防抖）：自动填标题/封面、识别平台
-  const onLinkChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const val = e.target.value;
-    window.clearTimeout(previewTimer.current);
-    if (!/^https?:\/\//i.test(val)) {
+  const parseLink = (text: string) => {
+    stopPreview();
+    const token = generation.current;
+    const val = extractSharedURL(text);
+    setLinkError("");
+    // Only replace fields we filled automatically; user edits and uploaded covers survive.
+    if (autoTitle.current && form.getFieldValue("title") === autoTitle.current) form.setFieldValue("title", "");
+    if (autoImage.current && form.getFieldValue("image") === autoImage.current) {
+      form.setFieldValue("image", "");
+      setThumb(null);
+      setThumbRef(null);
+    }
+    autoTitle.current = null;
+    autoImage.current = null;
+    if (!val) {
       setLinkState("idle");
       return;
     }
+    const platform = detectPlatform(val);
+    if (platform) form.setFieldValue("platform", platform);
     // 直接图片链接：无需请求，直接作为封面
     if (/\.(jpg|jpeg|png|gif|webp|avif|svg)(\?.*)?$/i.test(val)) {
-      form.setFieldValue("image", val);
-      setThumb(val);
+      if (!form.getFieldValue("image")) {
+        form.setFieldValue("image", val);
+        autoImage.current = val;
+        setThumb(val);
+      }
       setLinkState("ok");
       return;
     }
     setLinkState("loading");
     previewTimer.current = window.setTimeout(async () => {
+      const id = `preview-${Date.now()}-${token}`;
+      const controller = new AbortController();
+      previewID.current = id;
+      previewAbort.current = controller;
       try {
-        const r = await fetch(`/api/preview?url=${encodeURIComponent(val)}`);
-        const d = await r.json();
-        if (d.title && !form.getFieldValue("title")) form.setFieldValue("title", d.title);
+        const d = await previewLink(val, id, controller.signal);
+        if (generation.current !== token) return;
+        if (d.title && !form.getFieldValue("title")) {
+          form.setFieldValue("title", d.title);
+          autoTitle.current = d.title;
+        }
         if (d.image && !form.getFieldValue("image")) {
           form.setFieldValue("image", d.image);
+          autoImage.current = d.image;
           setThumb(d.image);
           setThumbRef(d.finalUrl || val);
-          setLinkState("ok");
-        } else {
-          setLinkState("noimg");
         }
-        const p = detectPlatform(val);
+        setLinkState(d.image ? "ok" : "noimg");
+        const p = detectPlatform(d.finalUrl || val) ?? detectPlatform(val);
         if (p) form.setFieldValue("platform", p);
-      } catch {
+      } catch (error) {
+        if (generation.current !== token) return;
+        setLinkError(error instanceof Error ? error.message : "解析失败，请重试。");
         setLinkState("error");
+      } finally {
+        if (generation.current === token) { previewID.current = null; previewAbort.current = null; }
       }
     }, 600);
   };
+  const onLinkChange = (e: React.ChangeEvent<HTMLInputElement>) => parseLink(e.target.value);
 
   const uploadProps: UploadProps = {
     accept: "image/*",
     showUploadList: false,
     beforeUpload: (file) => {
+      const token = ++uploadGeneration.current;
       const localUrl = URL.createObjectURL(file);
       setThumb(localUrl);
       setThumbRef(null);
       setUploading(true);
-      const fd = new FormData();
-      fd.append("file", file);
-      fetch("/api/upload", { method: "POST", body: fd })
-        .then((r) => r.json())
-        .then((d) => {
-          if (d.url) form.setFieldValue("image", d.url);
-          message.success("图片已上传");
+      autoImage.current = null;
+      saveUploadedImage(file)
+        .then((url) => {
+          if (uploadGeneration.current !== token) return;
+          form.setFieldValue("image", url);
+          setThumb(url);
+          message.success("图片已保存");
         })
-        .catch(() => message.error("上传失败"))
-        .finally(() => setUploading(false));
+        .catch((error) => {
+          if (uploadGeneration.current !== token) return;
+          setThumb(form.getFieldValue("image") || null);
+          message.error(error instanceof Error ? error.message : "图片保存失败");
+        })
+        .finally(() => {
+          URL.revokeObjectURL(localUrl);
+          if (uploadGeneration.current === token) setUploading(false);
+        })
       return false; // 阻止 antd 自动上传，改用手动 fetch
     },
   };
@@ -187,6 +247,7 @@ export default function AddIdeaModal({
       okText={edit ? "保存" : "收藏"}
       cancelText="取消"
       confirmLoading={loading}
+      okButtonProps={{ disabled: uploading || linkState === "loading" }}
       centered
     >
       <Form form={form} layout="vertical" className="pt-2">
@@ -242,11 +303,16 @@ export default function AddIdeaModal({
         </div>
 
         {/* 链接 */}
-        <Form.Item name="link" label="其他平台笔记链接（选填）" className="mt-4">
+        <Form.Item name="link" label="其他平台笔记链接（选填）" className="mt-4"
+          normalize={(value: string) => extractSharedURL(value) ?? value.trim()}
+          rules={[{ validator: async (_, value: string) => {
+            if (value && !extractSharedURL(value)) throw new Error("请粘贴有效的网页链接。");
+          } }]}
+        >
           <Input
-            placeholder="https:// 粘贴小红书 / 豆瓣…链接，自动识别平台与封面"
+            placeholder="粘贴网址或分享文案，自动获取标题与封面"
             onChange={onLinkChange}
-            maxLength={500}
+            maxLength={4000}
           />
         </Form.Item>
         <div className="-mt-2 mb-1 text-t5 leading-snug">
@@ -254,7 +320,7 @@ export default function AddIdeaModal({
             <span className="text-warmgray">正在解析链接，自动抓取主图…</span>
           )}
           {linkState === "ok" && (
-            <span className="text-mint">✓ 已自动抓取链接主图，将作为卡片封面</span>
+            <span className="text-mint">✓ 预览已获取，可检查标题和封面后收藏</span>
           )}
           {linkState === "noimg" && (
             <span className="text-warmgray">
@@ -263,7 +329,8 @@ export default function AddIdeaModal({
           )}
           {linkState === "error" && (
             <span style={{ color: "#C25C5C" }}>
-              该平台不允许抓取封面，可点上方「上传」选一张（不影响收藏）
+              {linkError} 可手动填写并上传封面。
+              <button type="button" className="ml-2 underline" onClick={() => parseLink(form.getFieldValue("link") || "")}>重试解析</button>
             </span>
           )}
         </div>

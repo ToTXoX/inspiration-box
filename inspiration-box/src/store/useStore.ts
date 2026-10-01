@@ -1,5 +1,6 @@
 import { create } from "zustand";
-import { persist } from "zustand/middleware";
+import { createJSONStorage, persist } from "zustand/middleware";
+import { appStorage } from "../lib/desktop";
 import { Idea, Board, CategoryId, Platform, TextNote, LibrarySort, CATEGORIES, DEFAULT_STATUS_TAG, LEGACY_STATUS_MAP, NOTE_DEFAULT_COLOR } from "../types";
 import { buildSeedIdeas, SEED_BOARDS } from "../data/seed";
 
@@ -616,6 +617,8 @@ export const useStore = create<State>()(
     }),
     {
       name: "inspiration-box-v1",
+      storage: createJSONStorage(() => appStorage),
+      skipHydration: true,
       // editingId 是瞬时 UI 态（编辑弹窗开关），不应持久化：
       // 否则上次没关的编辑弹窗会在刷新/重开后自动重新弹出。
       partialize: (state) => {

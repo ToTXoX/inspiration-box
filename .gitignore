@@ -4,6 +4,18 @@ dist/
 build/
 coverage/
 *.tsbuildinfo
+.build/
+.cache/
+.swiftpm/
+.tools/
+.vite/
+.eslintcache
+.stylelintcache
+
+# Xcode local build output and user settings
+DerivedData/
+xcuserdata/
+*.xcuserstate
 
 # Local environment and secrets
 .env
@@ -12,13 +24,22 @@ coverage/
 !.env.*.example
 *.pem
 *.key
+*.p12
+*.pfx
 
 # OS, editor, and tool artifacts
 .DS_Store
+.AppleDouble
+._*
+Thumbs.db
+Desktop.ini
 .idea/
 .vscode/
 .workbuddy/
 *.log
+*.swp
+*.swo
+*~
 
 # Personal uploads stay local; bundled example covers are versioned
 inspiration-box/server/uploads/*
