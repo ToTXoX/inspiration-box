@@ -1,0 +1,146 @@
+@import "tailwindcss";
+
+/* ===== 设计 Token（来自 ardot 设计稿） ===== */
+@theme {
+  --color-bg: #f2f4f2; /* 米白底 rgb(0.949,0.960,0.949) */
+  --color-surface: #ffffff;
+  --color-mint: #34a9ac; /* 薄荷青 主色 */
+  --color-mint-strong: #2b8f92;
+  --color-mint-soft: #e2f2f1; /* 浅青 */
+  --color-mint-tint: #c9e4e1; /* 卡片图占位 1 */
+  --color-mint-tint2: #b7dcd9; /* 卡片图占位 2 */
+  --color-brown: #2a1c12; /* 深棕 主文字 */
+  --color-warmgray: #827569; /* 暖灰 次文字 */
+  --color-gray: #9b978e; /* 灰 描边/图标 */
+  --color-red: #c25c5c; /* 红 精选心 */
+  --color-border: #dce8e0; /* 描边线 */
+  --color-sand: #c7b7a6; /* 旅行占位 */
+
+  --radius-card: 16px;
+  --radius-pill: 999px;
+
+  --font-sans: "Sarasa Gothic SC", "PingFang SC", "Microsoft YaHei",
+    system-ui, -apple-system, sans-serif;
+
+  /* ===== 文字阶梯（三页共用，改字号前先看这张表）=====
+     页面级排版只允许这 6 档，不再出现散落的 text-[15px] / text-[18px]。
+     t1 20px  页面主标题   PageHeader h1（「穿搭 · 灵感库」「主题画板」）
+     t2 16px  区块标题     SectionHead h2（「今天翻到」「最近想法」）· 侧栏面板标题
+     t3 14px  分组 / 小节标题 · 卡片标题(md) · 强调正文（导航胶囊上的分组名）
+     t4 13px  正文 · 控件   胶囊 / 按钮 / 卡片标题(sm) / 空态
+     t5 12px  辅助说明      副标题 · 卡片描述 · 字段标签
+     t6 11px  计数 · 元信息 面板「N 件」· 卡片日期行 · 底部导航标签
+     特例（不进阶梯）：顶栏品牌字 24px（Logo）；画布便签正文 15px（画布内容，非页面排版）
+     ＝ 2026-09-30 统一：修掉 18/16 两种区块标题、15/13 两种分组标题、13/12 两种副标 */
+  --text-t1: 20px;
+  --text-t2: 16px;
+  --text-t3: 14px;
+  --text-t4: 13px;
+  --text-t5: 12px;
+  --text-t6: 11px;
+}
+
+/* ===== 全局基准 ===== */
+* {
+  box-sizing: border-box;
+}
+html,
+body,
+#root {
+  height: 100%;
+}
+body {
+  margin: 0;
+  font-family: var(--font-sans);
+  background: var(--color-bg);
+  color: var(--color-brown);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ===== 滚动条：默认隐形，悬停淡入（薄荷青细条） ===== */
+.scroll-thin {
+  scrollbar-width: thin; /* Firefox */
+  scrollbar-color: transparent transparent;
+  transition: scrollbar-color 0.25s ease;
+}
+.scroll-thin:hover {
+  scrollbar-color: var(--color-mint-tint) transparent;
+}
+.scroll-thin::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+.scroll-thin::-webkit-scrollbar-track {
+  background: transparent;
+}
+/* background-clip:content-box + 透明边框 → 视觉上是细条，但保留足够点击区域 */
+.scroll-thin::-webkit-scrollbar-thumb {
+  background: transparent;
+  border: 3px solid transparent;
+  border-radius: 999px;
+  background-clip: content-box;
+  transition: background-color 0.25s ease;
+}
+.scroll-thin:hover::-webkit-scrollbar-thumb {
+  background: var(--color-mint-tint);
+  background-clip: content-box;
+}
+.scroll-thin::-webkit-scrollbar-thumb:hover {
+  background: var(--color-mint);
+  background-clip: content-box;
+}
+
+/* 灵感库卡片拖动调序：别让浏览器把图片当成「原生拖拽」抢走手势 */
+[data-idea-id] img {
+  -webkit-user-drag: none;
+  user-drag: none;
+}
+
+/* 点阵背景（复刻设计稿 AI 点阵图，纯 CSS） */
+.dot-grid {
+  background-color: #ffffff;
+  background-image: radial-gradient(var(--color-border) 1.4px, transparent 1.4px);
+  background-size: 22px 22px;
+  background-position: 0 0;
+}
+
+/* 画布卡片拖动时禁用文本选中 */
+.dragging,
+.dragging * {
+  user-select: none !important;
+  cursor: grabbing !important;
+}
+
+/* 让 AntD 主色贴合薄荷青 */
+.ant-btn {
+  font-family: var(--font-sans);
+}
+
+/* ===== 链接色归位（压过 AntD 的全局 a 样式）=====
+   AntD 运行时注入的 a:where(.css-xxx){color:#1677ff} 是「无 layer」的，
+   而 Tailwind 的工具类都在 @layer utilities 内 —— 无 layer 的声明恒胜有 layer 的，
+   结果 <a> 上写的 text-mint 会被吃掉、渲染成 AntD 蓝。
+   这里用「无 layer + 更高特异性」把颜色控制权交还给 Tailwind：
+   · 没写颜色类的链接 → 跟随父级（等同 Tailwind preflight 的 a{color:inherit}）
+   · 写了 text-mint 的链接 → 用主题薄荷青 */
+a[href] {
+  color: inherit;
+}
+a[href].text-mint {
+  color: var(--color-mint);
+}
+
+/* ===== 光标规范 =====
+   默认一律保持箭头（含图文卡片本体）；只有真正可交互的元素才用手型：
+   按钮 / 链接 / 下拉菜单项。卡片外层是 div[role="button"]，不会被命中，
+   所以鼠标落在卡片上仍是箭头，移到状态 pill、爱心、↗ 上才变手型。 */
+button:not(:disabled),
+a[href],
+[role="menuitem"],
+.ant-dropdown-menu-item,
+.ant-select-item {
+  cursor: pointer;
+}
+button:disabled {
+  cursor: not-allowed;
+}
