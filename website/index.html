@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#f6f7f1">
+  <title>灵感匣 · 把喜欢，留给未来的自己</title>
+  <meta name="description" content="灵感匣是一款 macOS 灵感收藏与主题画板工具。收好链接和图片，用分类整理喜欢，用画板让想法发生。数据保存在本机。">
+  <meta property="og:title" content="灵感匣 · 把喜欢，留给未来的自己">
+  <meta property="og:description" content="收好链接与图片，整理个人灵感，在主题画板里拼出下一次心动。为 macOS 而做。">
+  <meta property="og:type" content="website">
+  <link rel="canonical" href="https://totxox.github.io/inspiration-box/">
+  <link rel="icon" type="image/svg+xml" href="./assets/icon.svg">
+  <link rel="stylesheet" href="./styles.css">
+  <script src="./site.js" defer></script>
+</head>
+<body>
+  <a class="skip-link" href="#main">跳到主要内容</a>
+  <header class="header wrap">
+    <a class="brand" href="./" aria-label="灵感匣首页"><img src="./assets/icon.svg" width="34" height="34" alt=""><span>灵感匣</span><span class="brand-en">inspiration box</span></a>
+    <nav aria-label="主导航"><a href="#features">认识灵感匣</a><a href="#faq">常见问题</a><a class="nav-download" href="#download">下载 macOS 版 <span aria-hidden="true">↗</span></a></nav>
+  </header>
+  <main id="main">
+    <section class="hero wrap">
+      <div class="hero-copy"><p class="eyebrow"><span class="dot"></span> A LITTLE HOME FOR YOUR IDEAS</p>
+        <h1>把喜欢，<br>留给<span class="accent">未来的自己。</span></h1>
+        <p class="hero-description">一张想画的画，一件心动的衣服，一个想去的地方。<br class="desktop-break">让散落的灵感有处可放，也有机会慢慢发生。</p>
+        <div class="hero-actions"><a class="button primary" data-download href="https://github.com/ToTXoX/inspiration-box/releases"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12m-5-5 5 5 5-5M4 16v5h16v-5"/></svg><span data-download-label>下载 macOS 版</span></a><a class="text-link" href="#features">看看它能做什么 <span aria-hidden="true">↓</span></a></div>
+        <p class="system-note">macOS 13+ <span>·</span> Apple Silicon 与 Intel <span>·</span> 本地保存</p>
+      </div>
+      <div class="hero-art" aria-label="分类收藏与主题画板界面示意">
+        <span class="hand-note note-top">每一次心动，都算数 <span aria-hidden="true">↘</span></span>
+        <div class="app-window">
+          <div class="window-top"><span class="traffic" aria-hidden="true"><i></i><i></i><i></i></span><span>灵感匣</span><span class="window-label">界面示意</span></div>
+          <div class="app-toolbar"><b>i AM.</b><span class="fake-search">⌕ &nbsp; 搜一搜，你的灵感…</span><span class="tiny-heart" aria-hidden="true">♡</span></div>
+          <div class="app-inner"><div class="fake-tags"><span class="selected">全部灵感</span><span>家居</span><span>穿搭</span><span>动手做</span><span class="plus">＋</span></div><div class="app-heading"><div><small>留一点时间给喜欢的事</small><h2>最近想法</h2></div><span>8 件灵感</span></div>
+            <div class="idea-grid">
+              <article class="idea"><img src="./assets/cover-shelf.jpg" width="600" height="400" alt="木质书架与居家陈设"><div><span class="idea-category">家居</span><h3>给书和小物一个家</h3><span class="idea-meta">慢慢布置我的角落 <b aria-hidden="true">♥</b></span></div></article>
+              <article class="idea"><img src="./assets/cover-skirt.jpg" width="600" height="400" alt="柔和色调的半裙搭配"><div><span class="idea-category">穿搭</span><h3>周末，穿得轻盈一点</h3><span class="idea-meta">把喜欢穿在身上 <b aria-hidden="true">♡</b></span></div></article>
+              <article class="idea"><img src="./assets/cover-sketch.jpg" width="600" height="400" alt="绘画与速写灵感"><div><span class="idea-category">画画</span><h3>从一张小小的速写开始</h3><span class="idea-meta">不着急，先画起来 <b aria-hidden="true">♥</b></span></div></article>
+            </div><div class="app-bottom"><span>01 博物架</span><span class="selected">02 灵感库</span><span>03 主题画板</span></div>
+          </div>
+        </div>
+        <div class="floating-note"><span class="note-pin" aria-hidden="true"></span><span>周末的小计划</span><p>把收藏了很久的<br>那个角落，布置起来。</p><span class="note-mark" aria-hidden="true">✳</span></div>
+        <span class="hand-note note-bottom">收藏之后，故事才刚开始。</span>
+      </div>
+    </section>
+    <div class="manifesto wrap"><span>LESS SCROLLING. MORE CREATING.</span><p>收藏不只是「以后再看」。<br class="mobile-break">也是给生活留一点可能。</p><span class="spark" aria-hidden="true">✳</span></div>
+    <section class="features wrap" id="features">
+      <div class="section-intro"><p class="eyebrow">从心动，到行动</p><h2>三个空间，<br>装下你的灵感日常。</h2><p>先收好，再整理，最后把它变成自己的想法。<br>不必一次完成，每一步都可以慢慢来。</p></div>
+      <div class="feature-tabs" role="tablist" aria-label="产品功能">
+        <button role="tab" id="tab-shelf" aria-controls="panel-shelf" aria-selected="true" tabindex="0"><span>01</span> 博物架 <small>重新遇见喜欢</small></button>
+        <button role="tab" id="tab-library" aria-controls="panel-library" aria-selected="false" tabindex="-1"><span>02</span> 灵感库 <small>收好每次心动</small></button>
+        <button role="tab" id="tab-board" aria-controls="panel-board" aria-selected="false" tabindex="-1"><span>03</span> 主题画板 <small>拼出自己的想法</small></button>
+      </div>
+      <div class="feature-panel" role="tabpanel" id="panel-shelf" aria-labelledby="tab-shelf" tabindex="0"><div class="panel-copy"><span class="panel-number">01 / REDISCOVER</span><h3>那些曾经喜欢的，<br>值得再翻一翻。</h3><p>博物架把精选灵感按分类收好，也让沉睡已久的收藏重新出现。打开灵感匣，和过去的心动偶遇。</p><ul><li>精选置顶，留住最想做的事</li><li>「今天翻到」，重温久远的收藏</li><li>分类导航，找到自己的小世界</li></ul></div><div class="feature-visual shelf-visual"><span class="visual-title">今天翻到 <small>你还记得这些喜欢吗？</small></span><div class="polaroids"><figure><img src="./assets/cover-rattan.jpg" width="600" height="400" loading="lazy" alt="藤编手作灵感"><figcaption>有空，动手做点什么</figcaption></figure><figure><img src="./assets/cover-shelf.jpg" width="600" height="400" loading="lazy" alt="家居书架灵感"><figcaption>心里的小小理想家</figcaption></figure></div><span class="visual-caption">博物架 · 功能示意</span></div></div>
+      <div class="feature-panel" role="tabpanel" id="panel-library" aria-labelledby="tab-library" tabindex="0" hidden><div class="panel-copy"><span class="panel-number">02 / COLLECT</span><h3>喜欢来自各处，<br>在这里好好相聚。</h3><p>收藏网页链接，或上传自己的图片。自动提取可访问页面的标题与候选封面，再用分类、搜索和心形标记整理。</p><ul><li>支持粘贴包含链接的分享文案</li><li>多张候选封面，自由挑选</li><li>分类与搜索，让收藏更好找</li></ul></div><div class="feature-visual library-visual"><span class="visual-title">你的喜欢，都有位置。</span><div class="library-tags"><span>家居</span><span>穿搭</span><span>画画</span><span>旅行</span></div><div class="mini-cards"><img src="./assets/cover-shelf.jpg" width="600" height="400" loading="lazy" alt="家居收藏"><img src="./assets/cover-skirt.jpg" width="600" height="400" loading="lazy" alt="穿搭收藏"><img src="./assets/cover-sketch.jpg" width="600" height="400" loading="lazy" alt="绘画收藏"></div><span class="visual-caption">灵感库 · 功能示意</span></div></div>
+      <div class="feature-panel" role="tabpanel" id="panel-board" aria-labelledby="tab-board" tabindex="0" hidden><div class="panel-copy"><span class="panel-number">03 / CREATE</span><h3>把零散的喜欢，<br>拼成新的可能。</h3><p>在主题画板里摆放灵感卡片，写下便签，拖动和缩放画布。为穿搭、家居或下一次创作，找到属于你的组合。</p><ul><li>自由摆放卡片，整理视觉思路</li><li>文字便签，记下闪过的想法</li><li>缩放与适应，一眼看见全貌</li></ul></div><div class="feature-visual board-visual"><span class="visual-title">理想家的一个角落</span><img class="board-photo photo-one" src="./assets/cover-shelf.jpg" width="600" height="400" loading="lazy" alt="画板上的书架灵感"><img class="board-photo photo-two" src="./assets/cover-rattan.jpg" width="600" height="400" loading="lazy" alt="画板上的藤编灵感"><span class="board-sticky">温暖的木色<br>＋一点自然的质感</span><span class="visual-caption">主题画板 · 功能示意</span></div></div>
+    </section>
+    <section class="local-section wrap"><div class="local-symbol" aria-hidden="true">⌂</div><div><p class="eyebrow">A SPACE OF YOUR OWN</p><h2>你的灵感，住在你的 Mac 里。</h2><p>收藏、分类、画板和图片保存在本机，无需注册账号。<br>解析链接时会访问原网页；云同步与数据导入导出尚未提供。</p></div><span class="local-stamp">Made for<br><b>macOS</b></span></section>
+    <section class="faq wrap" id="faq"><div><p class="eyebrow">一些你可能想知道的事</p><h2>开始之前。</h2></div><div class="faq-list">
+      <details open><summary>我的 Mac 可以使用吗？</summary><p>需要 macOS 13 或更新版本。发布的 universal 安装包同时支持 Apple Silicon（M 系列）和 Intel Mac，无需选择处理器版本。</p></details>
+      <details><summary>如何安装灵感匣？</summary><p>下载最新版本的 DMG，打开后把「灵感匣」拖到 Applications（应用程序）文件夹。也可下载 ZIP，解压后将应用移动到该文件夹。各版本的签名与公证情况请查看发布说明。</p></details>
+      <details><summary>所有网页都能自动获取封面吗？</summary><p>会尝试读取页面标题与公开声明的候选图片。需要登录、出现验证或没有封面信息的页面可能无法自动获取，你仍可上传图片、手动填写标题和描述。</p></details>
+      <details><summary>我的收藏保存在哪里？</summary><p>保存在 Mac 的 Application Support/com.chenyun.inspiration-box 目录下。请随设备备份妥善保存数据；目前没有云同步，也没有内置导入导出功能。</p></details>
+      <details><summary>遇到问题，可以在哪里反馈？</summary><p>欢迎在 <a href="https://github.com/ToTXoX/inspiration-box/issues">GitHub Issues</a> 反馈。描述你的 macOS 版本、应用版本和复现步骤，会帮助我们更快定位问题。</p></details>
+    </div></section>
+    <section class="download-section wrap" id="download"><span class="download-flower" aria-hidden="true">✳</span><p class="eyebrow">给灵感一个安放的地方</p><h2>下一次心动，<br>从这里开始。</h2><a class="button primary" data-download href="https://github.com/ToTXoX/inspiration-box/releases"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12m-5-5 5 5 5-5M4 16v5h16v-5"/></svg><span data-download-label>下载 macOS 版</span></a><p class="release-status" id="release-status" aria-live="polite">macOS 13+ · 通用安装包</p><a class="all-releases" href="https://github.com/ToTXoX/inspiration-box/releases">查看所有版本与更新记录 ↗</a></section>
+  </main>
+  <footer class="footer wrap"><a class="brand" href="./"><img src="./assets/icon.svg" width="26" height="26" alt=""><span>灵感匣</span></a><p>不焦虑，慢慢来。</p><div><a href="https://github.com/ToTXoX/inspiration-box">源代码 ↗</a><a href="https://github.com/ToTXoX/inspiration-box/issues">反馈建议 ↗</a></div></footer>
+</body>
+</html>

@@ -2,6 +2,64 @@
 
 个人灵感收藏与主题画板工具，主客户端为 **macOS AppKit + WKWebView + React**。
 
+[软件官网](https://totxox.github.io/inspiration-box/) · [下载与更新记录](https://github.com/ToTXoX/inspiration-box/releases) · [问题反馈](https://github.com/ToTXoX/inspiration-box/issues)
+
+## 官网与自动发布
+
+`website/` 是独立静态介绍官网，包含功能介绍、安装说明、常见问题和最新版下载入口。无需安装前端依赖，推送官网修改到 `main` 后由 `.github/workflows/website.yml` 部署到 GitHub Pages。官网通过 GitHub API 获取最新稳定版 DMG；API 不可用时保留 Releases 页面入口，尚无稳定版本时显示待发布状态。
+
+首次启用需在仓库 **Settings → Pages → Build and deployment → Source** 选择 **GitHub Actions**，然后运行 **Actions → Deploy website → Run workflow** 或推送官网修改。地址为 `https://totxox.github.io/inspiration-box/`。如需自定义域名，在 Pages 中配置域名与 DNS；当前未设置自定义域名。
+
+本地预览：
+
+```sh
+python3 -m http.server 8080 --directory website
+# 打开 http://localhost:8080
+python3 scripts/check-website.py
+```
+
+`.github/workflows/release-macos.yml` 在推送 `v*` tag 时构建并发布 macOS 应用：
+
+1. 校验版本 tag，运行已有桌面桥接与数据保存检查。
+2. 构建 macOS 13+ 的 arm64 与 x86_64 二进制，合并为 universal 应用；应用版本取自 tag，构建号取自 Actions 运行编号。
+3. 生成 `InspirationBox-<版本>-macos-universal.dmg`、`.zip`、`.sha256`；DMG 提供 Applications 拖拽入口。
+4. 保存 Actions 构建产物 14 天，并上传到 GitHub Release。先建立草稿，上传全部文件后再公开；失败的草稿可通过重新运行工作流继续，已公开版本不会被覆盖。
+5. `v0.3.0-beta.1` 等带后缀的版本标记为预发布，不更新稳定版下载。应用内的版本号为基础版本（如 `0.3.0`），安装包与 Release 保留完整版本。
+
+先将这些配置提交并推送到仓库，再在要发布的提交上创建 tag（以下版本仅为示例，请选用尚未发布的版本）：
+
+```sh
+git tag -a v0.2.0 -m "Release v0.2.0"
+git push origin v0.2.0
+```
+
+仅创建本地 tag 不会触发发布。tag 支持 `v主版本.次版本.修订版本` 和预发布后缀；不支持 `+build` 后缀。仓库需允许 GitHub Actions 运行，Release 工作流自行申请 `contents: write` 权限，无需额外 GitHub PAT。macOS runner 使用 `macos-15`，Intel 版本由同一 runner 交叉编译；最终检查两种架构都在安装包内。
+
+### 可选：Developer ID 签名与 Apple 公证
+
+未配置以下 secrets 时，工作流仍会发布 ad-hoc 签名版本，并在 Release 中注明未经公证；首次打开可能被 Gatekeeper 拦截。正式对外分发建议在仓库 **Settings → Secrets and variables → Actions** 一次性配置全部五项：
+
+| Secret | 内容 |
+| --- | --- |
+| `MACOS_CERTIFICATE_P12_BASE64` | 含私钥的 **Developer ID Application** `.p12` 证书，以 Base64 编码 |
+| `MACOS_CERTIFICATE_PASSWORD` | 导出 `.p12` 时设置的非空密码 |
+| `APPLE_ID` | Apple 开发者账号邮箱 |
+| `APPLE_TEAM_ID` | Apple Developer Team ID |
+| `APPLE_APP_PASSWORD` | Apple ID 的 App 专用密码 |
+
+工作流导入证书到临时 keychain，启用 hardened runtime 与时间戳，公证并 staple 应用，再生成 ZIP/DMG；DMG 也会签名、公证并 staple。部分 secrets 缺失或签名、公证失败会停止发布，不会降级成未公证版本。临时证书与 keychain 在结束时清理。不要将证书、私钥或密码提交到仓库。
+
+本地可复用相同脚本：
+
+```sh
+MACOS_ARCH=universal APP_VERSION=0.2.0 APP_BUILD_NUMBER=2 bash scripts/build-macos.sh
+MACOS_ARCH=universal RELEASE_VERSION=0.2.0 bash scripts/package-macos.sh
+```
+
+若需本地签名，设置 `MACOS_SIGNING_IDENTITY` 为有效的 Developer ID Application 身份；公证另设 `MACOS_NOTARY_PROFILE` 为已由 `notarytool store-credentials` 保存的 keychain profile。打包脚本处理现有 `.app`，不自动重新编译。
+
+GitHub Pages 配置依据：[自定义工作流文档](https://docs.github.com/en/pages/getting-started-with-github-pages/using-custom-workflows-with-github-pages)。发布命令依据：[GitHub CLI Release 文档](https://cli.github.com/manual/gh_release_create)。
+
 ## 开发与构建
 
 要求 macOS 13+、Apple Command Line Tools（`xcode-select --install`）、Node.js 18+；无需 Go、Wails、Electron 或额外服务器。
@@ -14,7 +72,7 @@ bash scripts/build-macos.sh
 open build/灵感匣.app
 ```
 
-构建脚本把 React 产物和示例图片打包进 `.app`，并进行本机 ad-hoc 签名。默认构建当前 Mac 的架构；面向其他用户分发时，需另行完成 Developer ID 签名与公证。
+构建脚本把 React 产物和示例图片打包进 `.app`，默认构建当前 Mac 的架构并进行本机 ad-hoc 签名；设置 `MACOS_ARCH=universal` 可生成双架构应用。自动发布、Developer ID 签名与公证配置见上文。
 
 如果 Node 未加入 PATH，可用 `INSPIRATION_NODE=/absolute/path/to/node bash scripts/build-macos.sh` 指定可执行文件。
 
