@@ -2,13 +2,23 @@
 
 个人灵感收藏与主题画板工具，主客户端为 **macOS AppKit + WKWebView + React**。
 
-[软件官网](https://totxox.github.io/inspiration-box/) · [下载与更新记录](https://github.com/ToTXoX/inspiration-box/releases) · [问题反馈](https://github.com/ToTXoX/inspiration-box/issues)
+[官网源码](website/index.html) · [下载与更新记录](https://github.com/ToTXoX/inspiration-box/releases) · [问题反馈](https://github.com/ToTXoX/inspiration-box/issues)
 
 ## 官网与自动发布
 
-`website/` 是独立静态介绍官网，包含功能介绍、安装说明、常见问题和最新版下载入口。无需安装前端依赖，推送官网修改到 `main` 后由 `.github/workflows/website.yml` 部署到 GitHub Pages。官网通过 GitHub API 获取最新稳定版 DMG；API 不可用时保留 Releases 页面入口，尚无稳定版本时显示待发布状态。
+`website/` 是独立静态介绍官网，包含功能介绍、安装说明、常见问题和最新版下载入口。官网由你在 Vercel 手动导入仓库并配置部署，无需安装前端依赖。官网通过 GitHub API 获取最新稳定版 DMG；API 不可用时保留 Releases 页面入口，尚无稳定版本时显示待发布状态。
 
-首次启用需在仓库 **Settings → Pages → Build and deployment → Source** 选择 **GitHub Actions**，然后运行 **Actions → Deploy website → Run workflow** 或推送官网修改。地址为 `https://totxox.github.io/inspiration-box/`。如需自定义域名，在 Pages 中配置域名与 DNS；当前未设置自定义域名。
+在 Vercel 新建项目，导入本仓库，使用以下设置：
+
+| 设置 | 值 |
+| --- | --- |
+| Root Directory | `website` |
+| Framework Preset | `Other` |
+| Build Command | 留空（启用 Override） |
+| Install Command | 留空（启用 Override） |
+| Output Directory | `.` |
+
+上述部署设置直接在 Vercel 控制台填写，官网使用 `website/` 下的 HTML/CSS/JS 源文件。部署完成后，可在 Vercel 项目的 Domains 中配置自己的域名。确定正式地址后，再更新 README 顶部的官网链接，并在 `website/index.html` 添加指向该正式地址的 canonical 标签。
 
 本地预览：
 
@@ -58,7 +68,7 @@ MACOS_ARCH=universal RELEASE_VERSION=0.2.0 bash scripts/package-macos.sh
 
 若需本地签名，设置 `MACOS_SIGNING_IDENTITY` 为有效的 Developer ID Application 身份；公证另设 `MACOS_NOTARY_PROFILE` 为已由 `notarytool store-credentials` 保存的 keychain profile。打包脚本处理现有 `.app`，不自动重新编译。
 
-GitHub Pages 配置依据：[自定义工作流文档](https://docs.github.com/en/pages/getting-started-with-github-pages/using-custom-workflows-with-github-pages)。发布命令依据：[GitHub CLI Release 文档](https://cli.github.com/manual/gh_release_create)。
+官网部署配置依据：[Vercel 构建配置文档](https://vercel.com/docs/builds/configure-a-build)。发布命令依据：[GitHub CLI Release 文档](https://cli.github.com/manual/gh_release_create)。
 
 ## 开发与构建
 
