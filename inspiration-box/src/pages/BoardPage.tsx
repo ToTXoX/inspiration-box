@@ -16,7 +16,8 @@ import ManageCategoryModal from "../components/ManageCategoryModal";
 import {
   PageShell,
   Container,
-  PageHeader,
+  FilterBar,
+  FilterRow,
   Segmented,
 } from "../components/ui";
 import { SmartImage, CoverPlaceholder } from "../components/SmartImage";
@@ -904,6 +905,7 @@ export default function BoardPage() {
   const panRef = useRef<{ sx: number; sy: number; ox: number; oy: number } | null>(
     null
   );
+  const [panning, setPanning] = useState(false);
   const sizeRef = useRef({ w: 0, h: 0 });
   const [size, setSize] = useState({ w: 0, h: 0 });
 
@@ -928,6 +930,11 @@ export default function BoardPage() {
     if (!el) return;
     const update = () => {
       const s = { w: el.clientWidth, h: el.clientHeight };
+      const prev = sizeRef.current;
+      // 窗口缩放时保留世界坐标的视野中心与当前倍率。
+      if (prev.w > 0 && prev.h > 0 && s.w > 0 && s.h > 0) {
+        setCam((c) => ({ ...c, x: c.x + (s.w - prev.w) / 2, y: c.y + (s.h - prev.h) / 2 }));
+      }
       sizeRef.current = s;
       setSize(s);
     };
@@ -1182,6 +1189,7 @@ export default function BoardPage() {
     if (t.closest("[data-canvas-item]")) return;
     setMenu(null);
     panRef.current = { sx: e.clientX, sy: e.clientY, ox: cam.x, oy: cam.y };
+    setPanning(true);
     (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
   };
   const onViewportMove = (e: React.PointerEvent) => {
@@ -1195,6 +1203,7 @@ export default function BoardPage() {
   };
   const onViewportUp = () => {
     panRef.current = null;
+    setPanning(false);
   };
 
   const toWorld = (clientX: number, clientY: number) => {
@@ -1433,9 +1442,8 @@ export default function BoardPage() {
 
   if (!board) {
     return (
-      <PageShell>
-        <Container>
-          <PageHeader title="主题画板" sub="还没有画板" />
+      <PageShell workspace>
+        <Container className="min-h-0 flex-1 overflow-y-auto">
           <div className="py-12 text-center text-t4 text-warmgray">
             该画板不存在或已被清空
           </div>
@@ -1464,12 +1472,11 @@ export default function BoardPage() {
   const menuIsNote = menu ? notes.some((n) => n.id === menu.id) : false;
 
   return (
-    <PageShell>
-      <Container>
-        <PageHeader
-          title="主题画板"
-          sub="无边画布，任意方向都能延伸 — 自由排布或对齐排列"
-          right={
+    <PageShell workspace>
+      <Container className="flex min-h-0 flex-1 flex-col">
+        {/* 画板栏：按住画板胶囊拖动可调整顺序（顺序持久保存） */}
+        <FilterBar className="board-selector scroll-thin max-h-20 overflow-y-auto">
+          <FilterRow label="画板" right={
             <Segmented
               size="sm"
               value={free ? "free" : "grid"}
@@ -1483,30 +1490,27 @@ export default function BoardPage() {
                 { value: "grid", label: "规则排版" },
               ]}
             />
-          }
-        />
+          }>
+            <Segmented
+              size="sm"
+              value={board.id}
+              onChange={(v) => nav(`/board/${v}`)}
+              options={boards.map((b) => ({ value: b.id, label: b.name }))}
+              addItem={{ label: "新建画板", onClick: () => setNewOpen(true) }}
+              extra={
+                <button
+                  onClick={() => setManageOpen(true)}
+                  className="rounded-pill border border-border bg-white px-3 py-1 text-t4 font-semibold text-brown hover:bg-mint-soft/50"
+                >
+                  管理品类
+                </button>
+              }
+              onReorder={moveBoard}
+            />
+          </FilterRow>
+        </FilterBar>
 
-        {/* 画板栏：按住画板胶囊拖动可调整顺序（顺序持久保存） */}
-        <div className="pt-5">
-          <Segmented
-            size="md"
-            value={board.id}
-            onChange={(v) => nav(`/board/${v}`)}
-            options={boards.map((b) => ({ value: b.id, label: b.name }))}
-            addItem={{ label: "新建画板", onClick: () => setNewOpen(true) }}
-            extra={
-              <button
-                onClick={() => setManageOpen(true)}
-                className="rounded-pill border border-border bg-white px-3.5 py-1.5 text-t4 font-semibold text-brown hover:bg-mint-soft/50"
-              >
-                管理品类
-              </button>
-            }
-            onReorder={moveBoard}
-          />
-        </div>
-
-        <div className="flex flex-col gap-6 pb-12 pt-6 lg:flex-row">
+        <div className="page-content board-workspace grid min-h-0 flex-1 grid-rows-[minmax(0,3fr)_minmax(0,2fr)] gap-6 pb-4 md:grid-cols-[minmax(0,1fr)_220px] md:grid-rows-[minmax(0,1fr)]">
           {/* ============ 画布 ============ */}
           <div
             ref={viewportRef}
@@ -1514,6 +1518,7 @@ export default function BoardPage() {
             onPointerMove={onViewportMove}
             onPointerUp={onViewportUp}
             onPointerCancel={onViewportUp}
+            onLostPointerCapture={onViewportUp}
             onDoubleClick={onViewportDoubleClick}
             onDragOver={(e) => e.preventDefault()}
             onDrop={onDrop}
@@ -1521,11 +1526,11 @@ export default function BoardPage() {
               // 画布上不弹系统菜单；层级菜单由卡片/便签自己触发（仅自由排版）
               e.preventDefault();
             }}
-            className="dot-grid relative min-h-[560px] flex-1 touch-none overflow-hidden rounded-card border border-border lg:h-[820px]"
+            className="dot-grid relative min-h-0 min-w-0 touch-none overflow-hidden rounded-card border border-border"
             style={{
               backgroundPosition: `${cam.x}px ${cam.y}px`,
               backgroundSize: `${22 * cam.k}px ${22 * cam.k}px`,
-              cursor: panRef.current ? "grabbing" : "grab",
+              cursor: panning ? "grabbing" : "default",
             }}
           >
             <>
@@ -1730,8 +1735,8 @@ export default function BoardPage() {
           </div>
 
           {/* ============ 灵感库面板 ============ */}
-          <aside className="flex w-full shrink-0 flex-col rounded-2xl border border-border lg:h-[820px] lg:w-[220px]">
-            <div className="flex flex-col gap-1 p-5">
+          <aside className="flex min-h-0 min-w-0 flex-col overflow-hidden rounded-2xl border border-border">
+            <div className="flex shrink-0 flex-col gap-1 p-5">
               <div className="text-t2 font-semibold text-brown">灵感库</div>
               <div className="text-t5 text-warmgray">
                 本品类还没精选的灵感 · 点一下即陈列

@@ -52,6 +52,8 @@ export default function AddIdeaModal({
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [thumb, setThumb] = useState<string | null>(null);
+  const [candidateImages, setCandidateImages] = useState<string[]>([]);
+  const [previewWarning, setPreviewWarning] = useState("");
   // 预览图对应的原笔记页地址（图片代理用作伪装 Referer，绕过图床防盗链）
   const [thumbRef, setThumbRef] = useState<string | null>(null);
   const [linkState, setLinkState] = useState<
@@ -84,6 +86,7 @@ export default function AddIdeaModal({
     autoTitle.current = null;
     autoImage.current = null;
     setLinkError("");
+    setPreviewWarning("");
     if (open) {
       if (edit) {
         // 编辑模式：用现有卡片预填
@@ -94,6 +97,7 @@ export default function AddIdeaModal({
         form.setFieldValue("link", edit.link ?? "");
         form.setFieldValue("image", edit.image ?? "");
         setThumb(edit.image ?? null);
+        setCandidateImages([...new Set([...(edit.images ?? []), ...(edit.image ? [edit.image] : [])])]);
         setThumbRef(edit.link ?? null);
         setLinkState(edit.image ? "ok" : "idle");
       } else {
@@ -102,6 +106,7 @@ export default function AddIdeaModal({
       }
     } else {
       setThumb(null);
+      setCandidateImages([]);
       setThumbRef(null);
       setLinkState("idle");
       form.resetFields();
@@ -120,6 +125,7 @@ export default function AddIdeaModal({
           category: v.category as CategoryId,
           platform: v.platform as Platform,
           image: v.image?.trim() || undefined,
+          images: [...new Set([...(v.image ? [v.image.trim()] : []), ...candidateImages])],
           link: v.link?.trim() || undefined,
         });
         message.success("已保存修改");
@@ -130,6 +136,7 @@ export default function AddIdeaModal({
           category: v.category as CategoryId,
           platform: v.platform as Platform,
           image: v.image?.trim() || undefined,
+          images: [...new Set([...(v.image ? [v.image.trim()] : []), ...candidateImages])],
           link: v.link?.trim() || undefined,
         });
         message.success("已收藏到灵感匣");
@@ -150,6 +157,10 @@ export default function AddIdeaModal({
     const token = generation.current;
     const val = extractSharedURL(text);
     setLinkError("");
+    setPreviewWarning("");
+    // A changed link starts a fresh gallery; keep a manually chosen cover as a choice.
+    const currentImage = form.getFieldValue("image");
+    setCandidateImages(currentImage && currentImage !== autoImage.current ? [currentImage] : []);
     // Only replace fields we filled automatically; user edits and uploaded covers survive.
     if (autoTitle.current && form.getFieldValue("title") === autoTitle.current) form.setFieldValue("title", "");
     if (autoImage.current && form.getFieldValue("image") === autoImage.current) {
@@ -171,6 +182,7 @@ export default function AddIdeaModal({
         form.setFieldValue("image", val);
         autoImage.current = val;
         setThumb(val);
+        setCandidateImages([val]);
       }
       setLinkState("ok");
       return;
@@ -188,6 +200,10 @@ export default function AddIdeaModal({
           form.setFieldValue("title", d.title);
           autoTitle.current = d.title;
         }
+        const images = [...new Set([...(d.images ?? []), ...(d.image ? [d.image] : [])])];
+        const cover = form.getFieldValue("image");
+        setCandidateImages([...new Set([...(cover ? [cover] : []), ...images])]);
+        setPreviewWarning(d.warning || "");
         if (d.image && !form.getFieldValue("image")) {
           form.setFieldValue("image", d.image);
           autoImage.current = d.image;
@@ -223,6 +239,7 @@ export default function AddIdeaModal({
           if (uploadGeneration.current !== token) return;
           form.setFieldValue("image", url);
           setThumb(url);
+          setCandidateImages((images) => [...new Set([url, ...images])]);
           message.success("图片已保存");
         })
         .catch((error) => {
@@ -302,6 +319,29 @@ export default function AddIdeaModal({
           </span>
         </div>
 
+        {candidateImages.length > 1 && (
+          <div className="mt-3">
+            <div className="mb-2 text-t5 text-warmgray">已保存 {candidateImages.length} 张候选图，点击选择封面</div>
+            <div className="flex gap-2 overflow-x-auto pb-2" role="group" aria-label="候选封面">
+              {candidateImages.map((image, index) => (
+                <button key={image} type="button" aria-label={`选择封面 ${index + 1}`}
+                  aria-pressed={thumb === image} disabled={uploading || linkState === "loading"}
+                  className={`relative h-20 w-16 shrink-0 overflow-hidden rounded-lg border-2 ${thumb === image ? "border-mint" : "border-border"}`}
+                  onClick={() => {
+                    form.setFieldValue("image", image);
+                    autoImage.current = null;
+                    setThumb(image);
+                    setThumbRef(form.getFieldValue("link") || null);
+                  }}>
+                  <SmartImage src={image} refUrl={thumbRef ?? undefined} alt={`候选图 ${index + 1}`}
+                    className="h-full w-full object-cover" fallback={<CoverPlaceholder compact />} />
+                  {thumb === image && <span className="absolute inset-x-0 bottom-0 bg-mint text-center text-xs text-white">封面</span>}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
         {/* 链接 */}
         <Form.Item name="link" label="其他平台笔记链接（选填）" className="mt-4"
           normalize={(value: string) => extractSharedURL(value) ?? value.trim()}
@@ -317,7 +357,7 @@ export default function AddIdeaModal({
         </Form.Item>
         <div className="-mt-2 mb-1 text-t5 leading-snug">
           {linkState === "loading" && (
-            <span className="text-warmgray">正在解析链接，自动抓取主图…</span>
+            <span className="text-warmgray">正在解析链接，获取并保存候选图片…</span>
           )}
           {linkState === "ok" && (
             <span className="text-mint">✓ 预览已获取，可检查标题和封面后收藏</span>
@@ -332,6 +372,11 @@ export default function AddIdeaModal({
               {linkError} 可手动填写并上传封面。
               <button type="button" className="ml-2 underline" onClick={() => parseLink(form.getFieldValue("link") || "")}>重试解析</button>
             </span>
+          )}
+          {previewWarning && linkState !== "error" && (
+            <div className="mt-1 text-warmgray">{previewWarning}
+              <button type="button" className="ml-2 underline" onClick={() => parseLink(form.getFieldValue("link") || "")}>重试解析</button>
+            </div>
           )}
         </div>
 

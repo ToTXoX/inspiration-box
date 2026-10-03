@@ -16,10 +16,12 @@ function ScrollToTop() {
 }
 
 export default function Layout() {
+  const { pathname } = useLocation();
+  const workspace = pathname.startsWith("/board");
   return (
-    <div className="min-h-screen flex flex-col bg-bg">
+    <div className={`flex flex-col bg-bg ${workspace ? "h-dvh min-h-0 overflow-hidden" : "min-h-screen"}`}>
       <ScrollToTop />
-      <main className="flex-1 pb-28">
+      <main className={workspace ? "min-h-0 flex-1" : "flex-1 pb-28"}>
         <Outlet />
       </main>
       <BottomNav />

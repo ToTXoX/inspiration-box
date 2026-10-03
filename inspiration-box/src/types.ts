@@ -49,6 +49,7 @@ export interface Idea {
   platform: Platform;
   color: string; // 卡片图占位色
   image?: string; // 卡片图（上传的图片链接 或 抓取到的封面图）
+  images?: string[]; // 已保存的候选封面；卡片仍展示 image，编辑时可切换
   link?: string; // 原始笔记链接（其他平台）
   createdAt: number; // 时间戳
   featured: boolean; // 是否精选（红心 / 喜欢）

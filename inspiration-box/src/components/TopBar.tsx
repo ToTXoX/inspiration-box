@@ -97,18 +97,18 @@ export default function TopBar() {
   const list = kw ? hits : recent;
 
   return (
-    <header className="flex h-[72px] items-center gap-4 border-b border-border bg-white px-12 py-0">
+    <header className="sticky top-0 z-[60] flex h-14 shrink-0 items-center gap-4 border-b border-border bg-white px-12 py-0">
       {/* 品牌字：24px，是唯一不进阶梯的字号（Logo 不是页面排版） */}
       <div
         data-topbar-logo
-        className="text-2xl font-semibold tracking-tight text-brown"
+        className="shrink-0 text-2xl font-semibold tracking-tight text-brown"
       >
         i AM
       </div>
 
       {/* 搜索：站内图文卡片 */}
-      <div ref={boxRef} className="relative max-w-[420px] flex-1">
-        <div className="flex h-10 items-center gap-2 rounded-[20px] border border-border bg-mint-soft px-3.5 transition-colors focus-within:border-mint">
+      <div ref={boxRef} className="relative min-w-0 max-w-[420px] flex-1">
+        <div className="flex h-9 items-center gap-2 rounded-[20px] border border-border bg-mint-soft px-3.5 transition-colors focus-within:border-mint">
           <Search size={18} />
           <input
             ref={inputRef}
@@ -124,7 +124,7 @@ export default function TopBar() {
             }}
             placeholder="搜索站内的灵感卡片…"
             aria-label="搜索站内的灵感卡片"
-            className="w-full bg-transparent text-t3 text-brown placeholder:text-warmgray focus:outline-none"
+            className="min-w-0 w-full bg-transparent text-t3 text-brown placeholder:text-warmgray focus:outline-none"
           />
           {q && (
             <button
@@ -142,7 +142,7 @@ export default function TopBar() {
         </div>
 
         {searchOpen && (
-          <div className="absolute left-0 right-0 top-[46px] z-40 overflow-hidden rounded-card border border-border bg-white shadow-[0_16px_40px_-12px_rgba(0,0,0,0.18)]">
+          <div className="absolute left-0 right-0 top-full z-40 mt-1.5 overflow-hidden rounded-card border border-border bg-white shadow-[0_16px_40px_-12px_rgba(0,0,0,0.18)]">
             <div className="px-3.5 pb-1 pt-2.5 text-t6 font-medium text-warmgray">
               {kw ? `找到 ${hits.length} 条灵感` : "最近收藏"}
             </div>
@@ -201,11 +201,11 @@ export default function TopBar() {
         )}
       </div>
 
-      <div className="ml-auto flex items-center gap-3">
+      <div className="ml-auto flex shrink-0 items-center gap-3">
         <button
           type="button"
           onClick={() => setOpen(true)}
-          className="flex items-center gap-1 rounded-[20px] bg-brown px-[18px] py-2.5 text-t3 font-semibold text-white transition-opacity hover:opacity-90"
+          className="flex items-center gap-1 rounded-[20px] bg-brown px-[18px] py-2 text-t3 font-semibold text-white transition-opacity hover:opacity-90"
         >
           收藏
         </button>

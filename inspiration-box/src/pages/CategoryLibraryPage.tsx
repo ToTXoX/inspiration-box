@@ -6,7 +6,8 @@ import { PLATFORMS, CategoryId, Idea, LibrarySort } from "../types";
 import {
   PageShell,
   Container,
-  PageHeader,
+  FilterBar,
+  FilterRow,
   Segmented,
   IdeaCard,
   UploadCard,
@@ -54,11 +55,6 @@ export default function CategoryLibraryPage() {
   const inCat = useMemo(
     () => ideas.filter((i) => i.category === category),
     [ideas, category]
-  );
-
-  const sources = useMemo(
-    () => Array.from(new Set(inCat.map((i) => i.platform))),
-    [inCat]
   );
 
   /**
@@ -139,36 +135,27 @@ export default function CategoryLibraryPage() {
   return (
     <PageShell>
       <Container>
-        {/* 页头：与首页/画板页统一结构 */}
-        <PageHeader
-          title={`${category} · 灵感库`}
-          sub={`共 ${inCat.length} 件 · 来自 ${sources.join(" / ") || "—"}`}
-          right={
+        {/* 分类切换 + 来源筛选：统一 Segmented 视觉
+            分类行与博物架的「分类导航」共用同一份顺序：新建、拖动调序都同步生效 */}
+        <FilterBar>
+          <FilterRow label="分类" right={
             <Segmented
               size="sm"
               options={SORT_OPTIONS}
               value={sort}
               onChange={setSort}
             />
-          }
-        />
-
-        {/* 分类切换 + 来源筛选：统一 Segmented 视觉
-            分类行与博物架的「分类导航」共用同一份顺序：新建、拖动调序都同步生效 */}
-        <div className="flex flex-col gap-3 pt-5">
-          <div className="flex items-center gap-3">
-            <span className="w-7 shrink-0 text-t5 text-warmgray">分类</span>
+          }>
             <Segmented
-              size="md"
+              size="sm"
               value={category}
               onChange={(v) => nav(`/category/${v}`)}
               options={categories.map((c) => ({ value: c, label: c }))}
               addItem={{ label: "新建分类", onClick: () => setCatOpen(true) }}
               onReorder={moveCategory}
             />
-          </div>
-          <div className="flex items-center gap-3">
-            <span className="w-7 shrink-0 text-t5 text-warmgray">来源</span>
+          </FilterRow>
+          <FilterRow label="来源">
             <Segmented
               size="sm"
               value={source}
@@ -178,8 +165,8 @@ export default function CategoryLibraryPage() {
                 label: p,
               }))}
             />
-          </div>
-        </div>
+          </FilterRow>
+        </FilterBar>
 
         {/* 卡片网格：5 列紧凑（1440 视口），图片 4:3 自适应
             拖动任意卡片可调整顺序（自动切到「手动排序」），精选组始终置顶 */}
@@ -195,7 +182,7 @@ export default function CategoryLibraryPage() {
               e.preventDefault();
             }
           }}
-          className="grid grid-cols-2 gap-4 pb-12 pt-6 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5"
+          className="page-content grid grid-cols-2 gap-4 pb-12 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5"
         >
           <UploadCard onClick={() => setUploadOpen(true)} />
           {shown.map((i) => (

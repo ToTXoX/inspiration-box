@@ -1,10 +1,12 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useStore } from "../store/useStore";
 import { DAY, Idea } from "../types";
 import {
   PageShell,
   Container,
+  FilterBar,
+  FilterRow,
   Section,
   SectionHead,
   Segmented,
@@ -24,6 +26,19 @@ export default function HomePage() {
   const nav = useNavigate();
 
   const go = (cat: string) => nav(`/category/${cat}`);
+  const categoryRefs = useRef(new Map<string, HTMLDivElement>());
+  const [categoryNavigation, setCategoryNavigation] = useState({
+    category: "",
+    request: 0,
+  });
+
+  // 在分组渲染后定位，重复点击同一分类也能重新滚动；为顶栏留出 64px。
+  useEffect(() => {
+    categoryRefs.current.get(categoryNavigation.category)?.scrollIntoView({
+      behavior: "smooth",
+      block: "start",
+    });
+  }, [categoryNavigation]);
 
   /* —— 今天翻到：沉睡较久的灵感，随机 3 张 ——
      只存 id，卡片数据实时从仓库取：点爱心能立刻反映成红/灰。 */
@@ -88,8 +103,8 @@ export default function HomePage() {
           total: all.length,
         };
       })
-      .filter((g) => g.items.length > 0);
-  }, [ideas, categories, held, slots]);
+      .filter((g) => g.items.length > 0 || g.cat === categoryNavigation.category);
+  }, [ideas, categories, held, slots, categoryNavigation.category]);
 
   const onFavoriteChange = (id: string, featured: boolean) =>
     setHeld((h) => (featured ? h.filter((x) => x !== id) : [...h, id]));
@@ -100,26 +115,25 @@ export default function HomePage() {
   return (
     <PageShell>
       <Container>
-        {/* 分类导航：紧贴顶栏，末尾可新建分类；按住胶囊拖动可调整顺序 */}
-        <Section>
-          <SectionHead
-            title="分类导航"
-            sub="点分类去灵感库；按住胶囊拖动可调整顺序"
-          />
-          <div className="mt-4">
+        {/* 分类导航：末尾可新建分类；按住胶囊拖动可调整顺序 */}
+        <FilterBar>
+          <FilterRow label="分类">
             <Segmented
-              size="md"
-              value=""
-              onChange={(v) => go(v)}
+              size="sm"
+              value={categoryNavigation.category}
+              onChange={(category) => setCategoryNavigation((prev) => ({
+                category,
+                request: prev.request + 1,
+              }))}
               options={categories.map((c) => ({ value: c, label: c }))}
               addItem={{ label: "新建分类", onClick: () => setCatOpen(true) }}
               onReorder={moveCategory}
             />
-          </div>
-        </Section>
+          </FilterRow>
+        </FilterBar>
 
         {/* 今天翻到 */}
-        <Section>
+        <Section className="page-content">
           <SectionHead
             title="今天翻到"
             sub="你 3 个月前存的，还想要吗？"
@@ -148,7 +162,15 @@ export default function HomePage() {
           <SectionHead title="最近想法" sub="最近想做的，按分类收好" />
           <div className="mt-5 flex flex-col gap-6">
             {groups.map((g) => (
-              <div key={g.cat} className="flex flex-col gap-2.5">
+              <div
+                key={g.cat}
+                data-recent-category={g.cat}
+                ref={(el) => {
+                  if (el) categoryRefs.current.set(g.cat, el);
+                  else categoryRefs.current.delete(g.cat);
+                }}
+                className="flex scroll-mt-16 flex-col gap-2.5"
+              >
                 <div className="flex items-center gap-2">
                   <button
                     onClick={() => go(g.cat)}
@@ -163,24 +185,30 @@ export default function HomePage() {
                     ♡ {g.chosen} 件 · 共 {g.total} 件
                   </span>
                 </div>
-                <CardRow>
-                  {g.items.map((i) => (
-                  <IdeaCard
-                    key={i.id}
-                    idea={i}
-                    size="sm"
-                    meta="none"
-                    showStatus
-                    showFavorite
-                    showEdit
-                    favoriteReveal="hover"
-                    width={196}
-                    onEdit={setEditingId}
-                    onStatusChange={setStatusTag}
-                    onFavoriteChange={onFavoriteChange}
-                  />
-                  ))}
-                </CardRow>
+                {g.items.length === 0 ? (
+                  <div className="rounded-card border border-dashed border-border px-4 py-6 text-t4 text-warmgray">
+                    这个分类还没有精选灵感
+                  </div>
+                ) : (
+                  <CardRow>
+                    {g.items.map((i) => (
+                      <IdeaCard
+                        key={i.id}
+                        idea={i}
+                        size="sm"
+                        meta="none"
+                        showStatus
+                        showFavorite
+                        showEdit
+                        favoriteReveal="hover"
+                        width={196}
+                        onEdit={setEditingId}
+                        onStatusChange={setStatusTag}
+                        onFavoriteChange={onFavoriteChange}
+                      />
+                    ))}
+                  </CardRow>
+                )}
               </div>
             ))}
           </div>

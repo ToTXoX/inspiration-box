@@ -20,7 +20,9 @@ async function nativeCall<T>(method: string, args: Record<string, unknown> = {})
   }
 }
 
-export interface PreviewResult { title?: string; image?: string; finalUrl?: string; description?: string }
+export interface PreviewResult {
+  title?: string; image?: string; images?: string[]; finalUrl?: string; description?: string; warning?: string;
+}
 
 export function extractSharedURL(text: string): string | null {
   const match = text.replace(/\\&/g, "&").match(/https?:\/\/[^\s<>"'，。；！？【】「」“”]+/i);

@@ -205,6 +205,7 @@ interface State {
     platform: Platform;
     color?: string;
     image?: string;
+    images?: string[];
     link?: string;
   }) => void;
   /** 编辑已有卡片：分类选错、标题/来源想改，都走这里（patch 只覆盖传进来的字段） */
@@ -338,6 +339,7 @@ export const useStore = create<State>()(
             platform: input.platform,
             color: input.color ?? PALETTE[Math.floor(Math.random() * PALETTE.length)],
             image: input.image,
+            images: input.images,
             link: input.link,
             createdAt: Date.now(),
             featured: false,

@@ -37,41 +37,49 @@ export function Container({
 export function PageShell({
   children,
   showTopBar = true,
+  workspace = false,
 }: {
   children: React.ReactNode;
   showTopBar?: boolean;
+  workspace?: boolean;
 }) {
   return (
-    <div className="min-h-screen bg-bg">
+    <div className={`bg-bg ${workspace ? "flex h-full min-h-0 flex-col" : "min-h-screen"}`}>
       {showTopBar && <TopBar />}
       {children}
     </div>
   );
 }
 
-/* ---------- 页头：三页统一结构（标题 + 副标 + 右侧操作） ---------- */
-export function PageHeader({
-  title,
-  sub,
-  right,
+/* ---------- 三页共用筛选栏：统一行距、标签和胶囊起点 ---------- */
+export function FilterBar({
+  children,
   className = "",
 }: {
-  title: React.ReactNode;
-  sub?: React.ReactNode;
-  right?: React.ReactNode;
+  children: React.ReactNode;
   className?: string;
 }) {
   return (
-    <div
-      className={`flex items-end justify-between gap-4 border-b border-border pb-5 pt-8 ${className}`}
-    >
-      <div className="flex min-w-0 flex-col gap-1">
-        <h1 className="truncate text-t1 font-semibold leading-tight text-brown">
-          {title}
-        </h1>
-        {sub && <div className="truncate text-t5 text-warmgray">{sub}</div>}
-      </div>
-      {right && <div className="flex shrink-0 items-center gap-3">{right}</div>}
+    <div className={`page-filters flex shrink-0 flex-col gap-2 ${className}`}>
+      {children}
+    </div>
+  );
+}
+
+export function FilterRow({
+  label,
+  children,
+  right,
+}: {
+  label: string;
+  children: React.ReactNode;
+  right?: React.ReactNode;
+}) {
+  return (
+    <div className="flex items-start gap-3">
+      <span className="w-7 shrink-0 pt-1.5 text-t5 text-warmgray">{label}</span>
+      <div className="min-w-0 flex-1">{children}</div>
+      {right && <div data-filter-actions className="shrink-0">{right}</div>}
     </div>
   );
 }
@@ -102,7 +110,7 @@ export function Segmented<T extends string>({
   options,
   value,
   onChange,
-  size = "md",
+  size = "sm",
   addItem,
   extra,
   onReorder,
@@ -192,7 +200,7 @@ export function Segmented<T extends string>({
             title={canDrag ? "按住拖动可调整顺序" : undefined}
             style={canDrag ? { touchAction: "pan-y" } : undefined}
             className={[
-              "rounded-pill transition-colors",
+              "rounded-pill border transition-colors",
               /* sm 与 md 唯一的区别是「更紧凑的留白」——字号必须同为 t4。
                  早期 sm 用 t5(12px)，导致画板页里「自由排版/规则排版(12px)」
                  紧挨着「美貌/美家(13px)」，同排两种字号，视觉上很参差。 */
@@ -200,8 +208,8 @@ export function Segmented<T extends string>({
                 ? "px-3 py-1 text-t4"
                 : "px-3.5 py-1.5 text-t4",
               active
-                ? "bg-mint font-semibold text-white"
-                : "border border-border bg-white text-brown hover:bg-mint-soft/60",
+                ? "border-transparent bg-mint font-semibold text-white"
+                : "border-border bg-white text-brown hover:bg-mint-soft/60",
               canDrag ? "cursor-grab select-none active:cursor-grabbing" : "",
               dragIdx === i ? "opacity-70 ring-2 ring-mint/40" : "",
             ].join(" ")}
@@ -303,6 +311,23 @@ export function IdeaCard({
   const { message } = App.useApp();
   // 图片预览弹窗（本地态，仅被点击的那张卡会打开）
   const [preview, setPreview] = useState(false);
+  const previewCloseButton = useRef<HTMLButtonElement>(null);
+  useEffect(() => {
+    if (!preview) return;
+    const previousFocus = document.activeElement;
+    previewCloseButton.current?.focus();
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key !== "Escape") return;
+      event.preventDefault();
+      event.stopPropagation();
+      setPreview(false);
+    };
+    window.addEventListener("keydown", onKeyDown, true);
+    return () => {
+      window.removeEventListener("keydown", onKeyDown, true);
+      if (previousFocus instanceof HTMLElement && previousFocus.isConnected) previousFocus.focus();
+    };
+  }, [preview]);
   // 图片区：单击=预览（延迟 240ms 以让位于双击取消），双击=编辑。二者互斥。
   const previewTimer = useRef<number | null>(null);
   const clearPreviewTimer = () => {
@@ -318,6 +343,12 @@ export function IdeaCard({
   const dateStr = new Date(idea.createdAt).toLocaleDateString("zh-CN");
   const statusText = idea.statusTag ?? DEFAULT_STATUS_TAG;
   const showStatusPill = showStatus || !!idea.statusTag;
+  const previewPlaceholder = (
+    <div className="relative flex h-[55vh] w-[min(75vw,640px)] items-center justify-center"
+      style={{ background: idea.color }}>
+      <CoverPlaceholder platform={idea.platform} />
+    </div>
+  );
 
   // 卡片根：单击（延迟 240ms）跳转灵感库，双击编辑灵感。
   // 图片区已 stopPropagation，不会触发这里的跳转/编辑。
@@ -542,30 +573,31 @@ export function IdeaCard({
           <div
             className="fixed inset-0 z-[1000] flex items-center justify-center bg-black/70 p-4"
             data-preview-overlay
-            onClick={() => setPreview(false)}
+            role="dialog"
+            aria-modal="true"
+            aria-label={`图片预览：${idea.title}`}
+            onClick={(e) => { e.stopPropagation(); setPreview(false); }}
+            onDoubleClick={(e) => e.stopPropagation()}
+            onKeyDown={(e) => e.stopPropagation()}
           >
           <div
-            className="overflow-hidden rounded-card bg-[#241f19] shadow-2xl"
+            className="flex max-h-[calc(100dvh-2rem)] max-w-full flex-col overflow-hidden rounded-card bg-[#241f19] shadow-2xl"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="flex max-h-[78vh] items-center justify-center bg-[#1c1813]">
+            <div className="relative flex max-h-[78vh] min-h-0 items-center justify-center overflow-hidden bg-[#1c1813]">
               {idea.image ? (
                 <SmartImage
                   src={idea.image}
                   refUrl={idea.link}
                   alt={idea.title}
                   className="block max-h-[78vh] max-w-full object-contain"
+                  fallback={previewPlaceholder}
                 />
               ) : (
-                <div
-                  className="flex h-[55vh] w-full items-center justify-center"
-                  style={{ background: idea.color }}
-                >
-                  <CoverPlaceholder platform={idea.platform} />
-                </div>
+                previewPlaceholder
               )}
             </div>
-            <div className="flex items-center justify-between gap-3 px-4 py-3">
+            <div className="flex shrink-0 items-center justify-between gap-3 px-4 py-3">
               <div className="min-w-0">
                 <div className="truncate text-t3 font-semibold text-white/95">{idea.title}</div>
                 {idea.platform && (
@@ -584,6 +616,8 @@ export function IdeaCard({
                 </a>
               )}
               <button
+                ref={previewCloseButton}
+                type="button"
                 onClick={() => setPreview(false)}
                 className="shrink-0 rounded-pill bg-white/15 px-3 py-1 text-t6 text-white/90 transition-colors hover:bg-white/25"
               >
@@ -677,4 +711,3 @@ export function SoftPanel({
     </div>
   );
 }
-

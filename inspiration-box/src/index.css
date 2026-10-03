@@ -24,7 +24,7 @@
 
   /* ===== 文字阶梯（三页共用，改字号前先看这张表）=====
      页面级排版只允许这 6 档，不再出现散落的 text-[15px] / text-[18px]。
-     t1 20px  页面主标题   PageHeader h1（「穿搭 · 灵感库」「主题画板」）
+     t1 20px  页面主标题   预留（顶栏当前不显示页面名称）
      t2 16px  区块标题     SectionHead h2（「今天翻到」「最近想法」）· 侧栏面板标题
      t3 14px  分组 / 小节标题 · 卡片标题(md) · 强调正文（导航胶囊上的分组名）
      t4 13px  正文 · 控件   胶囊 / 按钮 / 卡片标题(sm) / 空态
@@ -55,6 +55,21 @@ body {
   background: var(--color-bg);
   color: var(--color-brown);
   -webkit-font-smoothing: antialiased;
+}
+
+/* 三页标题融合进顶栏；筛选栏和首个内容区共用紧凑间距。 */
+.page-filters,
+.page-content {
+  padding-top: 12px;
+}
+@media (max-height: 760px) {
+  .page-filters,
+  .page-content {
+    padding-top: 8px;
+  }
+  .board-workspace {
+    gap: 16px;
+  }
 }
 
 /* ===== 滚动条：默认隐形，悬停淡入（薄荷青细条） ===== */
